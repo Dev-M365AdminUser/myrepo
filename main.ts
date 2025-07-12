@@ -1,77 +1,93 @@
-import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-//import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import express, { Request, Response } from "express";
+import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
-import {z} from "zod";
-import axios from 'axios';
-import dotenv from 'dotenv';
+import { z } from "zod";
 
-dotenv.config();
-
-// Load environment variables from .env file
-// Ensure you have a .env file with USERNAME and API_TOKEN defined
-const username = process.env.USERNAME;
-const token = process.env.API_TOKEN;
-
-// Encode credentials in base64
-//const auth = Buffer.from(`${username}:${token}`).toString('base64');
-
-
-// Create an MCP server
 const server = new McpServer({
-  name: "confluence-mcp-server",
-  version: "1.0.0"
+  name: "mcp-streamable-http",
+  version: "1.0.0",
 });
 
-server.tool(
-    'get-Wikicontent',
-    'Tool to get Wiki content information',
-
-    {
-        spacekey: z.string().describe("Space key to get the Wiki content for"),
-
-    },
-    async({ spacekey }) => {
-        const config = {
-            method: 'get',
-            maxBodyLength: Infinity,
-            url: `https://14k2c.atlassian.net/wiki/rest/api/content?spaceKey=${spacekey}&expand=space,body.view,version,container`,
-            headers: { 
-                'Authorization': "Basic ZGV2X20zNjVhZG1pbnVzZXJAMTRrMmMub25taWNyb3NvZnQuY29tOkFUQVRUM3hGZkdGMHFaQmxOcW1YU0ZCVHJtZS1EN2U2ZHlFUmE4MDJ4VUtkYnFmQVRMVk8wYlRNdXZIYkN3bUMweDRtMEFNVmhXdzlMMkpyTTVHVklZdGNiWXdMVE8wd2FMWE5pM1dxalRjN0hvQkhpOUJ6eEZHU1duRnI1ZEplSDF1MTA0SFFwcXpMWmtRUkl0UlFxLWZaNHliSWRIbngxMG42RnNhbmtKWGt0eGZUSDlYVVJKMD0zMDdEQkJGMA==",
-                'Accept': 'application/json'
-            }
-        };
-
-        try {
-            const response = await axios.request(config);
-            const data = response.data;
-
-            return {
-                content: [
-                    {
-                        type: 'text',
-                        text: JSON.stringify({data}, null, 1),
-                    }
-                ]
-            };
-        } catch (error) {
-            return {
-                content: [
-                    {
-                        type: 'text',
-                        text: `Error: ${error}`
-                    }
-                ]
-            };
-        }
-    }
+// Get Chuck Norris joke tool
+const getChuckJoke = server.tool(
+  "get-chuck-joke",
+  "Get a random Chuck Norris joke",
+  async () => {
+    const response = await fetch("https://api.chucknorris.io/jokes/random");
+    const data = await response.json();
+    return {
+      content: [
+        {
+          type: "text",
+          text: data.value,
+        },
+      ],
+    };
+  }
 );
-    
 
-// Start receiving messages on stdin and sending messages on stdout
-//const transport = new StdioServerTransport();
-//await server.connect(transport);
+// Get Chuck Norris joke by category tool
+const getChuckJokeByCategory = server.tool(
+  "get-chuck-joke-by-category",
+  "Get a random Chuck Norris joke by category",
+  {
+    category: z.string().describe("Category of the Chuck Norris joke"),
+  },
+  async (params: { category: string }) => {
+    const response = await fetch(
+      `https://api.chucknorris.io/jokes/random?category=${params.category}`
+    );
+    const data = await response.json();
+    return {
+      content: [
+        {
+          type: "text",
+          text: data.value,
+        },
+      ],
+    };
+  }
+);
 
+// Get Chuck Norris joke categories tool
+const getChuckCategories = server.tool(
+  "get-chuck-categories",
+  "Get all available categories for Chuck Norris jokes",
+  async () => {
+    const response = await fetch("https://api.chucknorris.io/jokes/categories");
+    const data = await response.json();
+    return {
+      content: [
+        {
+          type: "text",
+          text: data.join(", "),
+        },
+      ],
+    };
+  }
+);
+
+// Get Dad joke tool
+const getDadJoke = server.tool(
+  "get-dad-joke",
+  "Get a random dad joke",
+  async () => {
+    const response = await fetch("https://icanhazdadjoke.com/", {
+      headers: {
+        Accept: "application/json",
+      },
+    });
+    const data = await response.json();
+    return {
+      content: [
+        {
+          type: "text",
+          text: data.joke,
+        },
+      ],
+    };
+  }
+);
 
 const app = express();
 app.use(express.json());
@@ -145,5 +161,3 @@ setupServer()
     console.error("Failed to set up the server:", error);
     process.exit(1);
   });
-
-
