@@ -1,5 +1,5 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-//import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js"; )(local)
+//import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import express, { Request, Response } from "express";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import {z} from "zod";
@@ -22,10 +22,6 @@ const server = new McpServer({
   name: "confluence-mcp-server",
   version: "1.0.0"
 });
-
-
-
-
 
 server.tool(
     'get-Wikicontent',
@@ -71,28 +67,10 @@ server.tool(
     }
 );
     
-server.tool(
-    'get-EnvVars',
-    'Tool to get environment variables',
-    {},
-    async () => {
-        return {
-            content: [
-                {
-                    type: 'text',
-                    text: JSON.stringify(process.env.API_TOKEN, null, 2)
-                }
-            ]
-        };
-    }
-);
 
 // Start receiving messages on stdin and sending messages on stdout
 //const transport = new StdioServerTransport();
 //await server.connect(transport);
-
-
-
 
 
 const app = express();
